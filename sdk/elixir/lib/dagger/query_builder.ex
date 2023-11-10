@@ -21,6 +21,7 @@ defmodule Dagger.QueryBuilder.Selection do
   def arg(%__MODULE__{args: args} = selection, name, value) when is_binary(name) do
     args = args || %{}
 
+    IO.inspect(value, label: "arg value")
     %{selection | args: Map.put(args, name, value)}
   end
 
@@ -62,7 +63,11 @@ defmodule Dagger.QueryBuilder.Selection do
   end
 
   defp encode_value(value) when is_list(value) do
-    [~c"[", Enum.map(value, &encode_value/1) |> Enum.intersperse(","), ~c"]"]
+    if Keyword.keyword?(value) do
+      encode_value(Enum.into(value, %{}))
+    else
+      [~c"[", Enum.map(value, &encode_value/1) |> Enum.intersperse(","), ~c"]"]
+    end
   end
 
   defp encode_value(value) when is_struct(value) do
@@ -72,6 +77,8 @@ defmodule Dagger.QueryBuilder.Selection do
   end
 
   defp encode_value(value) when is_map(value) do
+    IO.inspect(value, label: "encode_value")
+
     fun = fn {name, value} ->
       [to_string(name), ~c":", encode_value(value)]
     end
